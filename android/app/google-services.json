@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "99179385985",
+    "firebase_url": "https://treehouse-bdeca.firebaseio.com",
+    "project_id": "treehouse-bdeca",
+    "storage_bucket": "treehouse-bdeca.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:99179385985:android:bfe1a3798c408a22876980",
+        "android_client_info": {
+          "package_name": "com.example.treehouse"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "99179385985-p9i9a1sl4kimvgotpsopukojqs3rr3uc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHIzAuJiug8bjm1k5csRfJGvVNldtLkp8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "99179385985-p9i9a1sl4kimvgotpsopukojqs3rr3uc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
