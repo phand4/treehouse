@@ -39,10 +39,10 @@ class _HomeState extends State<Home> {
               borderRadius: new BorderRadius.circular(30.0),
             ),
             child: Text(
-              "REGISTER",
+              "post",
               style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.red,
                   fontSize: 20),
             ),
             onPressed: () {
