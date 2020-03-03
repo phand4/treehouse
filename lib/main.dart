@@ -11,17 +11,20 @@ void main() {
   });
 }
 
+
 final FirebaseAuth auth = FirebaseAuth.instance;
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+  // This widget is the root of the application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+
       title: 'TreeHouse',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         hintColor: Color(0xFFC0F0E8),
+        brightness: Brightness.light,
         primaryColor: Color(0xFFA9C77E),
         canvasColor: Colors.transparent,
         fontFamily: "Open Sans",

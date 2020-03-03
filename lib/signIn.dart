@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:treehouse/customTextField.dart';
 import 'package:treehouse/home.dart';
 
+
+//Log in page for the application
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => new _LoginPageState();
