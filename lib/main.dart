@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:treehouse/signIn.dart';
+import 'package:treehouse/pages/signIn.dart';
 import 'package:treehouse/home.dart';
 
 void main() {
@@ -35,12 +35,12 @@ class MyApp extends StatelessWidget {
           if(snapshot.hasData){
             return Home();
           }
-          return LoginPage();
+          return LoginRegPage();
         }
       ),
       routes: <String, WidgetBuilder>{
         '/home': (BuildContext context)=> new Home(),
-        '/login': (BuildContext context)=> new LoginPage()
+        '/login': (BuildContext context)=> new LoginRegPage()
       },
     );
   }

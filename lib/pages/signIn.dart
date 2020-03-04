@@ -1,25 +1,60 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../services/authentication.dart';
 
 import 'package:treehouse/customTextField.dart';
 import 'package:treehouse/home.dart';
 
 
-//Log in page for the application
-class LoginPage extends StatefulWidget {
+//Login + Registration page for the application
+class LoginRegPage extends StatefulWidget {
+
+  LoginRegPage({this.auth, this.onSignedIn});
+
+  final BaseAuth auth;
+  final VoidCallback onSignedIn;
+
   @override
-  _LoginPageState createState() => new _LoginPageState();
+  State<StatefulWidget> createState() => new _LoginRegPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginRegPageState extends State<LoginRegPage> {
   String _email, _password, _userName;
-  bool _loading = false; bool _autoValidate = false;
-  String errorMsg = "";
-  PersistentBottomSheetController _sheetController;
+  String _errorMsg;
+  bool _loading;
+
+  //Validation check
+  bool _autoValidate(){
+    final form = _formKey.currentState;
+    if(form.validate()){
+      form.save();
+      return true;
+    }
+    return false;
+  }
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  PersistentBottomSheetController _sheetController;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
+  void _validateAndSubmit() async {
+    setState(() {
+      _errorMsg = "";
+      _loading = true;
+    } );
+    if(_validateAndSave()) {
+      String userId= "";
+      try {
+        if (_formMode == FormMode.LOGIN) {
+
+        }
+      }
+    }
+  }
+
+  @override
   void initState(){
+    _errorMsg = "";
+    _loading = false;
     super.initState();
   }
 
@@ -107,8 +142,7 @@ class _LoginPageState extends State<LoginPage> {
           _loading = true;
         });
         try {
-          FirebaseUser user = (await FirebaseAuth.instance
-              .signInWithEmailAndPassword(email: _email, password: _password)) as FirebaseUser;
+          FirebaseUser user = await widget.auth.signIn(_email, _password);
           Navigator.of(context).pushReplacementNamed('/home');
         } catch (error) {
           switch (error.code) {
