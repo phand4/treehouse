@@ -29,13 +29,13 @@ class MyApp extends StatelessWidget {
         canvasColor: Colors.transparent,
         fontFamily: "Open Sans",
       ),
-      darktheme: ThemeData(
-        hintColor: Color(0xFFC0F0E8),
-        brightness: Brightness.light,
-        primaryColor: Color(0x4BB2F9FF),
-        canvasColor: Colors.transparent,
-        fontFamily: "Open Sans",
-      ),
+//      darktheme: ThemeData(
+//        hintColor: Color(0xFFC0F0E8),
+//        brightness: Brightness.light,
+//        primaryColor: Color(0x4BB2F9FF),
+//        canvasColor: Colors.transparent,
+//        fontFamily: "Open Sans",
+//      ),
       home: new StreamBuilder(
         stream: auth.onAuthStateChanged,
         builder: (context, snapshot){

@@ -1,103 +1,358 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
-
-
 import 'package:flutter/material.dart';
-
-
+import './services/authentication.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
 
 class Home extends StatefulWidget {
+  Home({Key key, this.auth, this.userId, this.onSignedOut}) : super(key: key);
+
+  final BaseAuth auth;
+  final VoidCallback onSignedOut;
+  final String userId;
+
   @override
-  _HomeState createState() => _HomeState();
+  State<StatefulWidget> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  TextEditingController _emailController = new TextEditingController();
-  TextEditingController _passwordController = new TextEditingController();
-  String _email;
-  String _password;
-  String _displayName;
+  final FirebaseDatabase _database = FirebaseDatabase.instance;
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  final TextEditingController _emailFilter = new TextEditingController();
+  final TextEditingController _passwordFilter = new TextEditingController();
+  final TextEditingController _resetPasswordEmailFilter =
+      new TextEditingController();
+
+  String _email = "";
+  String _password = "";
+  String _resetPasswordEmail = "";
+  String _displayName = "";
+
+  String _errorMsg;
+  bool _loading;
   bool _obsecure = false;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        resizeToAvoidBottomPadding: false,
-        key: _scaffoldKey,
-        backgroundColor: Theme.of(context).primaryColor,
-        body: Column(children: <Widget>[
-          buffer(),
-          OutlineButton(
-            highlightedBorderColor: Colors.white,
-            borderSide: BorderSide(color: Colors.white, width: 2.0),
-            highlightElevation: 0.0,
-            splashColor: Colors.white,
-            highlightColor: Theme.of(context).primaryColor,
-            color: Theme.of(context).primaryColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: new BorderRadius.circular(30.0),
-            ),
-            child: Text(
-              "post",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                  fontSize: 20),
-            ),
-            onPressed: () {
-              //_registerSheet();
-            },
-          ),
-        ]));
+  _HomeState() {
+    _emailFilter.addListener(_emailListen);
+    _passwordFilter.addListener(_passwordListen);
+    _resetPasswordEmailFilter.addListener(_resetPasswordEmailListen);
   }
 
-  Widget buffer() {
-    return Center(
-        child: Padding(
-      padding: EdgeInsets.only(top: 120),
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        height: 240,
-        ),
+  void _resetPasswordEmailListen() {
+    if (_resetPasswordEmailFilter.text.isEmpty) {
+      _resetPasswordEmail = "";
+    } else {
+      _resetPasswordEmail = _resetPasswordEmailFilter.text;
+    }
+  }
+
+  void _emailListen() {
+    if (_emailFilter.text.isEmpty) {
+      _email = "";
+    } else {
+      _email = _emailFilter.text;
+    }
+  }
+
+  void _passwordListen() {
+    if (_passwordFilter.text.isEmpty) {
+      _password = "";
+    } else {
+      _password = _passwordFilter.text;
+    }
+  }
+
+  final _textEditingController = TextEditingController();
+
+  StreamSubscription<Event> _onToDoAddedSubscription;
+  StreamSubscription<Event> _onTodoChangedSubscription;
+
+  Query _todoQuery;
+
+  bool _isEmailVerified = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void _checkEmailVerification() async {
+    _isEmailVerified = await widget.auth.isEmailVerified();
+    if (!_isEmailVerified) {
+      _showVerifyEmailDialog();
+    }
+  }
+
+  void _resentVerifyEmail() {
+    widget.auth.sendEmailVerification();
+    _showVerifyEmailSentDialog();
+  }
+
+  void _showVerifyEmailDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text("Verify your account"),
+          content: new Text("Please verify account in the link sent to email"),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text("Resend link"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _resentVerifyEmail();
+              },
+            ),
+            new FlatButton(
+              child: new Text("Dismiss"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showVerifyEmailSentDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: new Text("Verify your account"),
+          content: new Text(
+              "Link to verify your account has been sent to your email"),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text("Dismiss"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _onToDoAddedSubscription.cancel();
+    _onTodoChangedSubscription.cancel();
+    super.dispose();
+  }
+
+  _signOut() async {
+    try {
+      await widget.auth.signOut();
+      widget.onSignedOut();
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Widget _showButtonList() {
+    return new Container(
+      padding: EdgeInsets.all(26.0),
+      child: new ListView(
+        children: <Widget>[
+          _showChangeEmailContainer(),
+          new SizedBox(
+            height: 40.0,
+          ),
+          _showChangePasswordContainer(),
+          new SizedBox(
+            height: 40.0,
+          ),
+          _showSentResetPasswordEmailContainer(),
+          new SizedBox(
+            height: 40.0,
+          ),
+          _removeUserContainer(),
+        ],
       ),
     );
   }
 
-  Widget _input(
-      Icon icon, String hint, TextEditingController controller, bool obsecure) {
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+      appBar: new AppBar(
+        title: new Text('Flutter login demo'),
+        actions: <Widget>[
+          new FlatButton(
+              child: new Text('Logout',
+                  style: new TextStyle(fontSize: 17.0, color: Colors.white)),
+              onPressed: _signOut)
+        ],
+      ),
+      body: _showButtonList(),
+    );
+  }
+
+  Widget _showChangeEmailContainer() {
     return Container(
-        padding: EdgeInsets.only(left: 20, right: 20),
-        child: TextField(
-          controller: controller,
-          obscureText: obsecure,
-          style: TextStyle(
-            fontSize: 20,
+      decoration: BoxDecoration(
+        borderRadius: new BorderRadius.circular(30.0),
+        color: Colors.amberAccent,
+      ),
+      padding: EdgeInsets.fromLTRB(10, 20, 10, 20),
+      child: Column(
+        children: <Widget>[
+          new TextFormField(
+            controller: _emailFilter,
+            decoration: new InputDecoration(
+              contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+              hintText: "Enter New Email",
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(22.0)),
+            ),
           ),
-          decoration: InputDecoration(
-              hintStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              hintText: hint,
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: Theme.of(context).primaryColor,
-                  width: 2,
-                ),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(
-                  color: Theme.of(context).primaryColor,
-                  width: 3,
-                ),
-              ),
-              prefixIcon: Padding(
-                child: IconTheme(
-                  data: IconThemeData(color: Theme.of(context).primaryColor),
-                  child: icon,
-                ),
-                padding: EdgeInsets.only(left: 30, right: 10),
-              )),
-        ));
+          new MaterialButton(
+            shape: RoundedRectangleBorder(
+                borderRadius: new BorderRadius.circular(30.0)),
+            onPressed: () {
+              _changeEmail();
+            },
+            minWidth: MediaQuery.of(context).size.width,
+            padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+            color: Colors.blueAccent,
+            textColor: Colors.white,
+            child: Text(
+              "Change Email",
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _changeEmail() {
+    if (_email != null && _email.isNotEmpty) {
+      try {
+        print("============>" + _email);
+        widget.auth.changeEmail(_email);
+      } catch (e) {
+        print("============>" + e);
+        setState(() {
+          _loading = false;
+          _errorMsg = e.message;
+        });
+      }
+    } else {
+      print("Email field left empty.");
+    }
+  }
+
+  void _changePassword() {
+    if (_password != null && _password.isNotEmpty) {
+      print("============>" + _password);
+      widget.auth.changePassword(_password);
+    } else {
+      print("Password field left empty");
+    }
+  }
+
+  void _removeUser() {
+    widget.auth.deleteUser();
+  }
+
+  void _sendResetPasswordMail() {
+    if (_resetPasswordEmail != null && _resetPasswordEmail.isNotEmpty) {
+      print("============>" + _resetPasswordEmail);
+      widget.auth.sendPasswordResetMail(_resetPasswordEmail);
+    } else {
+      print("Password field is empty");
+    }
+  }
+
+  _showChangePasswordContainer() {
+    return Container(
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30.0), color: Colors.brown),
+      padding: EdgeInsets.fromLTRB(10, 20, 10, 20),
+      child: Column(
+        children: <Widget>[
+          new TextFormField(
+            controller: _passwordFilter,
+            decoration: new InputDecoration(
+              contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+              hintText: "Enter new password",
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(22.0)),
+            ),
+          ),
+          new MaterialButton(
+            shape: RoundedRectangleBorder(
+                borderRadius: new BorderRadius.circular(30.0)),
+            onPressed: () {
+              _changePassword();
+            },
+            minWidth: MediaQuery.of(context).size.width,
+            padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+            color: Colors.blueAccent,
+            textColor: Colors.white,
+            child: Text(
+              "Change Password",
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _showSentResetPasswordEmailContainer() {
+    return Column(
+      children: <Widget>[
+        new Container(
+          child: new TextFormField(
+            controller: _resetPasswordEmailFilter,
+            decoration: new InputDecoration(
+              contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+              hintText: "Enter Email",
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(22.0)),
+            ),
+          ),
+        ),
+        new MaterialButton(
+            shape: RoundedRectangleBorder(
+                borderRadius: new BorderRadius.circular(30.0)),
+            onPressed: () {
+              _sendResetPasswordMail();
+            },
+            minWidth: MediaQuery.of(context).size.width,
+            padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+            color: Colors.blueAccent,
+            textColor: Colors.white,
+            child: Text(
+              "Send Password Reset Mail",
+              textAlign: TextAlign.center,
+            )),
+      ],
+    );
+  }
+
+  _removeUserContainer() {
+    return new MaterialButton(
+      shape:
+          RoundedRectangleBorder(borderRadius: new BorderRadius.circular(30.0)),
+      onPressed: () {
+        _removeUser();
+      },
+      minWidth: MediaQuery.of(context).size.width,
+      padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+      color: Colors.red,
+      textColor: Colors.white,
+      child: Text(
+        "Remove User",
+        textAlign: TextAlign.center,
+      ),
+    );
   }
 }
