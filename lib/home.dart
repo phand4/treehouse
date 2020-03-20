@@ -178,18 +178,18 @@ void dispose(){
 
   @override
   Widget build(BuildContext context){
-
     return new Scaffold(
-      appBar: AppBar(
-        title: Text("dashboard"),
-        actions: <Widget>[
-          new FlatButton(
-              onPressed: signOut,
-              child: new Text('Logout',
-              style: new TextStyle(fontSize:  17.0, color: Colors.white)),
-          )
-        ],
-      ),
+//      appBar: AppBar(
+//        title: Text("dashboard"),
+//        actions: <Widget>[
+//          new FlatButton(
+//            onPressed: signOut(),
+//
+//            child: new Text('Logout',
+//                style: new TextStyle(fontSize:  17.0, color: Colors.white)),
+//          )
+//        ],
+//      ),
       body: _showDashboardList(),
         floatingActionButton: FloatingActionButton(
         onPressed: (){

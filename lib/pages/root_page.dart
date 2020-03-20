@@ -81,7 +81,7 @@ class _RootPageState extends State<RootPage> {
       case AuthStatus.LOGGED_IN:
         if (_userId.length > 0 && _userId != null) {
 
-          return new Home(
+          return new BottomNavigationBarController(
             userId: _userId,
             auth: widget.auth,
             logoutCallback: _onSignedOut,
