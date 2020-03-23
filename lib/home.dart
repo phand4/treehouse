@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -5,6 +6,8 @@ import 'package:intl/intl.dart';
 import './services/authentication.dart';
 import './services/navigation.dart';
 import 'package:treehouse/models/dashboard.dart';
+
+import 'main.dart';
 
 
 class Home extends StatefulWidget{
@@ -19,7 +22,7 @@ class Home extends StatefulWidget{
 }
 
 class _HomeState extends State<Home>{
-  List<Dashboard> _dashboardList;
+  List<Dashboard> _dashboardList = [];
 
   final FirebaseDatabase _database = FirebaseDatabase.instance;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -27,18 +30,20 @@ class _HomeState extends State<Home>{
   final _textEditingController = TextEditingController();
   StreamSubscription<Event> _onDashboardAddedSubscription;
   StreamSubscription<Event> _onDashboardChangedSubscription;
-
+  Query _dashboardQuery;
 
 @override
 void initState() {
   super.initState();
 
   _dashboardList = new List();
-  Query _dashboardQuery = _database
+  _dashboardQuery = _database
       .reference()
       .child("dashboard")
-      .orderByChild("userId")
-      .equalTo(widget.userId);
+      .orderByChild("userId");
+
+
+
   _onDashboardAddedSubscription =
       _dashboardQuery.onChildAdded.listen(_onEntryAdded);
   _onDashboardChangedSubscription =
@@ -112,25 +117,14 @@ void dispose(){
     });
   }
 
-  _updateDashboard(Dashboard dashboard){
-  if(dashboard != null){
-    _database.reference().child("dashboard").child(dashboard.key).set(dashboard.toJson());
-  }
-  }
-
-  _deleteDashboard(String dashboardID, int index){
-  _database.reference().child("dashboard").child(dashboardID).remove().then
-    ((_){
-      print("Deleted $dashboardID successful");
-      setState(() {
-        _dashboardList.removeAt(index);
-      });
-  });
-  }
-
-  addNewDashboard(String dashboardItem){
+  addNewDashboard(String dashboardItem) async {
   if(dashboardItem.length > 0){
-    Dashboard dashboard= new Dashboard(dashboardItem.toString(), widget.userId, DateTime.now());
+    final FirebaseUser user = await auth.currentUser();
+    final userId = user.uid;
+
+   DateTime dateTest = DateTime.now();
+   String formattedDate = DateFormat('yyyy-MM-DD kk-mm-ss').format(dateTest);
+    Dashboard dashboard= new Dashboard(dashboardItem.toString(), formattedDate, userId);
 
     _database.reference().child("dashboard").push().set(dashboard.toJson());
   }
@@ -144,23 +138,20 @@ void dispose(){
           itemBuilder: (BuildContext context, int index) {
             String dashboardID = _dashboardList[index].key;
             String content = _dashboardList[index].content;
-            DateTime posttime = _dashboardList[index].posttime;
-            String formatposttime = DateFormat('yyyy-MM-dd - kk:mm').format(
-                posttime);
+            String postTime = _dashboardList[index].posttime;
             String userId = _dashboardList[index].userId;
             return Dismissible(
                 key: Key(dashboardID),
                 background: Container(color: Colors.green),
-                onDismissed: (direction) async {
-                  _deleteDashboard(dashboardID, index);
-                },
+//                onDismissed: (direction) async {
+//                  _deleteDashboard(dashboardID, index);
+//                },
                 child: ListTile(
-                  title: Text(
-                    content,
+                  title: Text( '$content + $userId',
                     style: TextStyle(fontSize: 20.0),
                   ),
-                  trailing: Text(
-                    formatposttime,
+                  subtitle: Text(
+                    ' $postTime',
                     style: TextStyle(fontSize: 10.0),
                   ),
                 )

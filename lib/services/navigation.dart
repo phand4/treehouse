@@ -21,6 +21,8 @@ class BottomNavigationBarController extends StatefulWidget{
 class _BottomNavigationBarControllerState extends State<BottomNavigationBarController>{
 
 
+
+
   signOut() async {
     try {
       await widget.auth.signOut();

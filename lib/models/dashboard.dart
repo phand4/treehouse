@@ -4,8 +4,8 @@ class Dashboard{
   String key;
   String userId;
   String content;
-  DateTime posttime;
-  Dashboard(this.userId, this.content, this.posttime);
+  String posttime;
+  Dashboard(this.content, this.posttime, this.userId );
 
   Dashboard.fromSnapshot(DataSnapshot snapshot) :
       key = snapshot.key,
@@ -15,8 +15,8 @@ class Dashboard{
 
   toJson(){
     return{
-      "userId" : userId,
       "content" : content,
+      "userId" : userId,
       "posttime" : posttime,
     };
   }
