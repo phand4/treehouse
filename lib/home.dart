@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import './services/authentication.dart';
 import './services/navigation.dart';
 import 'package:treehouse/models/dashboard.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'main.dart';
 
@@ -40,7 +41,8 @@ void initState() {
   _dashboardQuery = _database
       .reference()
       .child("dashboard")
-      .orderByChild("userId");
+      .orderByChild("posttime");
+
 
 
 
@@ -49,6 +51,8 @@ void initState() {
   _onDashboardChangedSubscription =
       _dashboardQuery.onChildChanged.listen(_onEntryChanged);
 }
+
+
 
 _onEntryAdded(Event event){
     setState(() {
@@ -122,16 +126,32 @@ void dispose(){
     final FirebaseUser user = await auth.currentUser();
     final userId = user.uid;
 
+    Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    String formattedLocation = location.toString();
+    final formattedLocation2 = RegExp(r"\s");
+    var parts = formattedLocation.split(formattedLocation2);
+    String lat = parts[1];
+    lat = lat.substring(0, lat.length -1);
+    String long = parts[3];
+
    DateTime dateTest = DateTime.now();
-   String formattedDate = DateFormat('yyyy-MM-DD kk-mm-ss').format(dateTest);
-    Dashboard dashboard= new Dashboard(dashboardItem.toString(), formattedDate, userId);
+   String formattedDate = DateFormat('yyyy-MM-dd kk:mm:ss').format(dateTest);
+    Dashboard dashboard= new Dashboard(dashboardItem.toString(), formattedDate, userId, lat, long);
 
     _database.reference().child("dashboard").push().set(dashboard.toJson());
   }
   }
 
-  Widget _showDashboardList(){
-    if(_dashboardList.length > 0) {
+  getlocation() async{
+    Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    String formattedLocation = location.toString();
+
+    return formattedLocation;
+  }
+
+  Widget _showDashboardList() {
+
+    if (_dashboardList.length > 0) {
       return ListView.builder(
           shrinkWrap: true,
           itemCount: _dashboardList.length,
@@ -139,7 +159,9 @@ void dispose(){
             String dashboardID = _dashboardList[index].key;
             String content = _dashboardList[index].content;
             String postTime = _dashboardList[index].posttime;
-            String userId = _dashboardList[index].userId;
+            String location = _dashboardList[index].lat;
+
+//            String userId = _dashboardList[index].userId;
             return Dismissible(
                 key: Key(dashboardID),
                 background: Container(color: Colors.green),
@@ -147,7 +169,8 @@ void dispose(){
 //                  _deleteDashboard(dashboardID, index);
 //                },
                 child: ListTile(
-                  title: Text( '$content + $userId',
+                  title: Text(
+                    '$content',
                     style: TextStyle(fontSize: 20.0),
                   ),
                   subtitle: Text(
@@ -159,14 +182,13 @@ void dispose(){
           });
     } else {
       return Center(
-        child: Text(
-          "There is no content in this area.",
+          child: Text(
+            "There is no content in this area. ",
             textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 30.0),
-        ));
+            style: TextStyle(fontSize: 30.0),
+          ));
     }
   }
-
   @override
   Widget build(BuildContext context){
     return new Scaffold(

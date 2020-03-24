@@ -180,15 +180,15 @@ class _OptionState extends State<Option> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      appBar: new AppBar(
-        title: new Text('Flutter login demo'),
-        actions: <Widget>[
-          new FlatButton(
-              child: new Text('Logout',
-                  style: new TextStyle(fontSize: 17.0, color: Colors.white)),
-              onPressed: _signOut)
-        ],
-      ),
+//      appBar: new AppBar(
+//        title: new Text('Flutter login demo'),
+//        actions: <Widget>[
+//          new FlatButton(
+//              child: new Text('Logout',
+//                  style: new TextStyle(fontSize: 17.0, color: Colors.white)),
+//              onPressed: _signOut)
+//        ],
+//      ),
       body: _showButtonList(),
     );
   }
