@@ -20,6 +20,9 @@ class MyApp extends StatelessWidget {
         title: 'TreeHouse',
         theme: ThemeData(
           primarySwatch: Colors.green,
+//          textTheme: Theme.of(context).textTheme.apply(
+//            fontFamily: 'Helvetica'
+//          )
         ),
         home: new RootPage(auth: new Auth(),
         ),
