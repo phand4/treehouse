@@ -14,6 +14,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as Path;
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class Home extends StatefulWidget{
   Home({Key key, this.auth, this.userId, this.logoutCallback}) : super(key: key);
@@ -261,10 +262,20 @@ void initState() {
                            topLeft: Radius.circular(8.0),
                            topRight: Radius.circular(8.0),
                          ),
-                         child: Image.network(
-                          image,
-                          height: 150,
-                        ),
+                         child: CachedNetworkImage(
+                           imageUrl: image,
+//                           imageBuilder: (context, imageProvider) => Container(
+//                             decoration: BoxDecoration(
+//                               image: image
+//                             ),
+//                           ),
+                           placeholder: (context, url) => CircularProgressIndicator(),
+                           errorWidget: (context, url, error) => Icon(Icons.error),
+                         ),
+//                         Image.network(
+//                          image,
+//                          height: 150,
+//                        ),
                        ),
                          ListTile(
                            title: Text(
