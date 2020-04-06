@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:treehouse/option.dart';
 import 'package:treehouse/home.dart';
+import 'package:treehouse/profile.dart';
 import 'package:treehouse/services/authentication.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
-import 'package:treehouse/models/dashboard.dart';
+import 'package:treehouse/models/user.dart';
 
 class BottomNavigationBarController extends StatefulWidget{
   BottomNavigationBarController({Key key, this.auth, this.userId, this.logoutCallback}) : super(key: key);
@@ -36,6 +37,9 @@ class _BottomNavigationBarControllerState extends State<BottomNavigationBarContr
     Home(
       key: PageStorageKey('Page1'),
     ),
+    Profile(
+      key: PageStorageKey('Page2'),
+    ),
     Option(
       key: PageStorageKey('Page2')
     ),
@@ -52,6 +56,8 @@ class _BottomNavigationBarControllerState extends State<BottomNavigationBarContr
       BottomNavigationBarItem(
         icon: Icon(Icons.dashboard), title: Text('Home')),
       BottomNavigationBarItem(
+          icon: Icon(Icons.account_box), title: Text('Profile')),
+      BottomNavigationBarItem(
         icon: Icon(Icons.build), title: Text('Options')),
     ],
   );
@@ -60,13 +66,13 @@ class _BottomNavigationBarControllerState extends State<BottomNavigationBarContr
   Widget build(BuildContext context){
     return Scaffold(
         appBar: AppBar(
-        title: Text("dashboard"),
+        title: Text("Treehouse"),
         actions: <Widget>[
           new FlatButton(
             onPressed: signOut,
 
             child: new Text('Logout',
-                style: new TextStyle(fontSize:  17.0, color: Colors.white)),
+                style: new TextStyle(fontSize:  20.0, color: Colors.white)),
           )
         ],
       ),

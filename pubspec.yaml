@@ -28,6 +28,7 @@ dependencies:
   image_picker: ^0.6.4
   firebase_storage: ^3.1.5
   cached_network_image: ^2.0.0
+  pull_to_refresh: ^1.5.8
 
   cupertino_icons: ^0.1.2
 

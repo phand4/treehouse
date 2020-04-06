@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import './services/navigation.dart';
-import 'package:treehouse/models/dashboard.dart';
+import 'package:treehouse/models/user.dart';
 import 'package:geolocator/geolocator.dart';
 import './services/encodeGeoHash.dart';
 import 'package:geohash/geohash.dart';
@@ -28,7 +28,7 @@ class Home extends StatefulWidget{
 }
 
 class _HomeState extends State<Home>{
-  List<Dashboard> _dashboardList = [];
+  List<User> _dashboardList = [];
   File _image;
   var image;
 
@@ -54,11 +54,10 @@ class _HomeState extends State<Home>{
 //  }
 
 @override
-void initState() {
+void initState()  {
   super.initState();
 
-
-  _dashboardList = new List();
+    _dashboardList = new List();
 //  _dashboardQuery = _database
 //      .reference()
 //      .child("dashboard")
@@ -74,22 +73,6 @@ void initState() {
 
 
 
-//_onEntryAdded(Event event){
-//    setState(() {
-//      _dashboardList.add(Dashboard.fromSnapshot(event.snapshot));
-//    });
-//}
-
-//_onEntryChanged(realtime.Event event){
-//    var oldEntry = _dashboardList.singleWhere((entry){
-//      return entry.key == event.snapshot.key;
-//    });
-//
-//    setState(() {
-//      _dashboardList[_dashboardList.indexOf(oldEntry)] =
-//          Dashboard.fromSnapshot(event.snapshot);
-//    });
-//}
 
 //@override
 //void dispose(){
@@ -105,34 +88,6 @@ void initState() {
        });
      });
    }
-//   var altText;
-//   if(image != null){
-//     return AlertDialog(
-//       content: new Row(
-//         children: <Widget>[
-//           new Expanded(
-//             child: new TextField(
-//               controller: _textEditingController,
-//               autofocus: true,
-//               decoration: new InputDecoration(
-//                 labelText: 'Enter descriptive alternative text for the image.',
-//               ),
-//             ),
-//           )
-//         ],
-//       ),
-//         actions: <Widget>[
-//         new FlatButton(
-//           onPressed: (){
-//             return altText = _textEditingController.text.toString();
-//             },
-//           child: const Text('Save'),
-//        ),
-//    ]
-//     );
-//
-//   }
-
 
   signOut() async {
     try {
@@ -142,6 +97,7 @@ void initState() {
       print(e);
     }
   }
+
   showAddDashboardDialog(BuildContext context) async {
     _textEditingController.clear();
     await showDialog<String>(
@@ -221,25 +177,42 @@ void initState() {
     });
   }
 
+  getUserLoc() async {
+    Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    var geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 10);
+    return geohash;
+  }
+
+  Future getList(var geohash) async{
+    //cloudDbReference;
+
+//    QuerySnapshot snap = await cloudDbReference.collection('dashboard').whereorderBy("posttime").getDocuments();
+    QuerySnapshot snap = await Firestore.instance
+        .collection('dashboard')
+        .orderBy('posttime', descending: true)
+        .where('geohash', isEqualTo: "gcddjn18egys")
+        .getDocuments();
+
+    return snap;
+  }
 
   Widget _showDashboardList() {
     final f = new DateFormat('yyyy-MM-dd hh:mm');
-    return StreamBuilder<QuerySnapshot>(
-      stream: cloudDbReference
-          .collection("dashboard")
-          .orderBy("posttime", descending: true)
-          .snapshots(),
-      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-        if (!snapshot.hasData) return const Text('Loading content...');
-        final int messageCount = snapshot.data.documents.length;
+    var geoHash = getUserLoc();
+    return FutureBuilder(
+      future: getList(geoHash),
+        builder: (_, _snapshot) {
+        if (!_snapshot.hasData) return const Text('Loading content...', textAlign: TextAlign.center,
+           style: TextStyle(fontSize: 30.0));
+        final int messageCount = _snapshot.data.documents.length;
         return ListView.separated(
           separatorBuilder: (context, index) => Divider(
             color: Colors.lightGreen,
           ),
           itemCount: messageCount,
           itemBuilder:(_, int index){
-            final DocumentSnapshot document = snapshot.data.documents[index];
-            final docID = snapshot.data.documents[index];
+            final DocumentSnapshot document = _snapshot.data.documents[index];
+            final docID = _snapshot.data.documents[index];
             final dynamic content = document['content'];
             final dynamic posttime = document['posttime'];
             if(document['photo'] == null){
@@ -247,7 +220,7 @@ void initState() {
             } else {
               image = document['photo'];
             }
-
+//
             DateTime dateTime = posttime.toDate();
             return Container(
                 margin: EdgeInsets.all(8.0),
@@ -269,8 +242,8 @@ void initState() {
 //                               image: image
 //                             ),
 //                           ),
-                           placeholder: (context, url) => CircularProgressIndicator(),
-                           errorWidget: (context, url, error) => Icon(Icons.error),
+                           //placeholder: (context, url) => CircularProgressIndicator(),
+                           //errorWidget: (context, url, error) => Icon(Icons.error),
                          ),
 //                         Image.network(
 //                          image,
@@ -296,9 +269,80 @@ void initState() {
         );
       }
       );
-}
-//          itemBuilder: (_, int index) {
+    }
 
+
+//    return StreamBuilder<QuerySnapshot>(
+//      stream:
+//      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+//        if (!snapshot.hasData) return const Text('Loading content...');
+//        final int messageCount = snapshot.data.documents.length;
+//        return ListView.separated(
+//          separatorBuilder: (context, index) => Divider(
+//            color: Colors.lightGreen,
+//          ),
+//          itemCount: messageCount,
+//          itemBuilder:(_, int index){
+//            final DocumentSnapshot document = snapshot.data.documents[index];
+//            final docID = snapshot.data.documents[index];
+//            final dynamic content = document['content'];
+//            final dynamic posttime = document['posttime'];
+//            if(document['photo'] == null){
+//              image = 'gs://treehouse-bdeca.appspot.com/uploads/Pure_White_181.jpg';
+//            } else {
+//              image = document['photo'];
+//            }
+//
+//            DateTime dateTime = posttime.toDate();
+//            return Container(
+//                margin: EdgeInsets.all(8.0),
+//               child: Card(
+//                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8.0))),
+//                   child: InkWell(
+//                     onTap:() => print("Test"),
+//                     child: Column(
+//                       children: <Widget>[
+//                       ClipRRect(
+//                         borderRadius: BorderRadius.only(
+//                           topLeft: Radius.circular(8.0),
+//                           topRight: Radius.circular(8.0),
+//                         ),
+//                         child: CachedNetworkImage(
+//                           imageUrl: image,
+////                           imageBuilder: (context, imageProvider) => Container(
+////                             decoration: BoxDecoration(
+////                               image: image
+////                             ),
+////                           ),
+//                           placeholder: (context, url) => CircularProgressIndicator(),
+//                           errorWidget: (context, url, error) => Icon(Icons.error),
+//                         ),
+////                         Image.network(
+////                          image,
+////                          height: 150,
+////                        ),
+//                       ),
+//                         ListTile(
+//                           title: Text(
+//                             '$content',
+//                             style: TextStyle(fontSize: 20.0),
+//                           ),
+//                           subtitle: Text(
+//                             dateTime.toString(),
+//                             style: TextStyle(fontSize: 10.0),
+//                           ),
+//                         )
+//                     ]
+//                   )
+//                 )
+//            ),
+//            );
+//          }
+//        );
+//      }
+//      );
+
+//          itemBuilder: (_, int index) {
 
 
 
@@ -345,8 +389,7 @@ void initState() {
 //  return Center(
 //  child: Text(
 //  "There is no content in this area. ",
-//  textAlign: TextAlign.center,
-//  style: TextStyle(fontSize: 30.0),
+
 //  ));
 
 
@@ -363,4 +406,5 @@ void initState() {
     ));
 
   }
+
 }
