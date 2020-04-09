@@ -18,28 +18,45 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:treehouse/services/authentication.dart';
 import 'package:treehouse/services/Provider.dart';
 
-class Home extends StatefulWidget{
 
+enum DistFormType { near, far, wyr}
+
+class Home extends StatefulWidget{
+  final DistFormType distFormType;
+
+  Home({Key key, @required this.distFormType}) : super(key: key);
   @override
-  _HomeState createState() => new _HomeState();
+  _HomeState createState() => _HomeState(distFormType: this.distFormType);
 }
 
 class _HomeState extends State<Home>{
+  DistFormType distFormType;
+  _HomeState({this.distFormType});
   List<User> _UserList = [];
   File _image;
   var image;
   String _userId;
 
-//
-//  final realtime.FirebaseDatabase _database = realtime.FirebaseDatabase.instance;
   final cloudDbReference = Firestore.instance;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   final _textEditingController = TextEditingController();
-//  StreamSubscription<Event> _onDashboardAddedSubscription;
-//  StreamSubscription<Event> _onDashboardChangedSubscription;
-//  Query _dashboardQuery;
 
+  void _switchForm(String state) {
+    if(state == "near"){
+      setState(() {
+        distFormType = DistFormType.near;
+      });
+    } else if (state == 'far') {
+      setState(() {
+        distFormType = DistFormType.far;
+      });
+    } else {
+      setState((){
+        distFormType = DistFormType.wyr;
+      });
+    }
+  }
   //bounding box to calculate area around user
 //  Rectangle<T> boundingBox(Rectangle<T> other) {
 //    var latmax = max(this.left  this.width, other.left + other.width);
@@ -146,10 +163,18 @@ void initState()  {
     });
   }
 
-
-    //Get current user's location
+    var geohash;
     Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    var geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 5);
+    if(distFormType == DistFormType.near){
+      geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 8);
+    } else if(distFormType == DistFormType.far){
+      geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 5);
+    } else {
+      geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 3);
+    }
+    //Get current user's location
+
+
     DateTime dateTest = DateTime.now();
     await cloudDbReference.collection("dashboard")
     .add({
@@ -165,14 +190,28 @@ void initState()  {
 
   getUserLoc() async {
     Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    var geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 5);
+    var geohash;
+    if(distFormType == DistFormType.near){
+      geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 8);
+    } else if(distFormType == DistFormType.far){
+      geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 5);
+    } else {
+      geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 3);
+    }
     return geohash;
   }
 
   Future getList() async{
     //cloudDbReference;
     Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    String geohash = await Geohash.encode(location.latitude, location.longitude, codeLength: 5);
+    String geohash;
+    if(distFormType == DistFormType.near){
+      geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 8);
+    } else if(distFormType == DistFormType.far){
+      geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 5);
+    } else {
+      geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 3);
+    }
 //    QuerySnapshot snap = await cloudDbReference.collection('dashboard').whereorderBy("posttime").getDocuments();
     QuerySnapshot snap = await Firestore.instance
         .collection('dashboard')
@@ -272,8 +311,39 @@ void initState()  {
           },
          tooltip: 'Increment',
           child: Icon(Icons.message),
-    ));
-
+    ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              child: Text('Distance Change'),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey,
+              ),
+            ),
+            ListTile(
+              title: Text('Near'),
+              onTap: () {
+                _switchForm('near');
+              },
+            ),
+            ListTile(
+              title: Text('Far'),
+              onTap: () {
+                _switchForm('far');
+              },
+            ),
+            ListTile(
+              title: Text('Country'),
+              onTap: () {
+                _switchForm('wyr');
+              },
+            ),
+          ],
+        ),
+        )
+      );
   }
 
 }
