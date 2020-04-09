@@ -8,7 +8,7 @@ import '../services/navigation.dart';
 class RootPage extends StatefulWidget {
   RootPage({this.auth});
 
-  final BaseAuth auth;
+  final AuthService auth;
 
   @override
   State<StatefulWidget> createState() => new _RootPageState();
@@ -74,18 +74,14 @@ class _RootPageState extends State<RootPage> {
         break;
       case AuthStatus.NOT_LOGGED_IN:
         return new LoginRegPage(
-          auth: widget.auth,
-          onSignedIn: _onLoggedIn,
+//          auth: widget.auth,
+//          onSignedIn: _onLoggedIn,
         );
         break;
       case AuthStatus.LOGGED_IN:
         if (_userId.length > 0 && _userId != null) {
 
           return new BottomNavigationBarController(
-            userId: _userId,
-            auth: widget.auth,
-            logoutCallback: _onSignedOut,
-
           );
         } else
           return _buildWaitingScreen();

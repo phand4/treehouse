@@ -15,22 +15,20 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as Path;
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:treehouse/services/authentication.dart';
+import 'package:treehouse/services/Provider.dart';
 
 class Home extends StatefulWidget{
-  Home({Key key, this.auth, this.userId, this.logoutCallback}) : super(key: key);
 
-
-  final BaseAuth auth;
-  final String userId;
-  final VoidCallback logoutCallback;
   @override
-  State<StatefulWidget> createState() => new _HomeState();
+  _HomeState createState() => new _HomeState();
 }
 
 class _HomeState extends State<Home>{
-  List<User> _dashboardList = [];
+  List<User> _UserList = [];
   File _image;
   var image;
+  String _userId;
 
 //
 //  final realtime.FirebaseDatabase _database = realtime.FirebaseDatabase.instance;
@@ -57,18 +55,8 @@ class _HomeState extends State<Home>{
 void initState()  {
   super.initState();
 
-    _dashboardList = new List();
-//  _dashboardQuery = _database
-//      .reference()
-//      .child("dashboard")
-//      .orderByChild("posttime");
-//      .startAt(range.lower)
-//      .endAt(range.upper);
+    _UserList = new List();
 
-//  _onDashboardAddedSubscription =
-//      _dashboardQuery.onChildAdded.listen(_onEntryAdded);
-//  _onDashboardChangedSubscription =
-//      _dashboardQuery.onChildChanged.listen(_onEntryChanged);
 }
 
 
@@ -89,14 +77,6 @@ void initState()  {
      });
    }
 
-  signOut() async {
-    try {
-      await widget.auth.signOut();
-      widget.logoutCallback();
-    } catch (e) {
-      print(e);
-    }
-  }
 
   showAddDashboardDialog(BuildContext context) async {
     _textEditingController.clear();
@@ -143,28 +123,33 @@ void initState()  {
 
   addNewDashboard(String dashboardItem, File _image) async {
     //Get current user ID
-    final FirebaseUser user = await auth.currentUser();
-    final userId = user.uid;
 
+    String user = await Provider.of(context).auth.getCurrentUID();
+    String displayName = await Provider.of(context).auth.getCurrentDisplayName();
+    String _uploadedFileURL;
+
+  if(_image == null){
+    _uploadedFileURL = "gs://treehouse-bdeca.appspot.com/uploads/Pure_White_181.jpg";
+  }else {
     //Upload image retrieve url and assign url to firestore
     File image2 = _image;
-    String _uploadedFileURL;
+
     StorageReference storageReference = FirebaseStorage.instance
         .ref()
         .child('uploads/${Path.basename(image2.path)}}');
     StorageUploadTask uploadTask = storageReference.putFile(image2);
     await uploadTask.onComplete;
-    storageReference.getDownloadURL().then((fileURL){
-      setState((){
-       _uploadedFileURL = fileURL;
+    storageReference.getDownloadURL().then((fileURL) {
+      setState(() {
+        _uploadedFileURL = fileURL;
       });
     });
-
+  }
 
 
     //Get current user's location
     Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    var geohash = Geohash.encode(location.latitude, location.longitude);
+    var geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 5);
     DateTime dateTest = DateTime.now();
     await cloudDbReference.collection("dashboard")
     .add({
@@ -172,25 +157,27 @@ void initState()  {
         'geohash' : geohash,
         'location' : new GeoPoint(location.latitude, location.longitude),
         'posttime' : dateTest,
-        'userId' : userId,
+        'userId' : user,
+        'displayName' : displayName,
         'photo' : _uploadedFileURL,
     });
   }
 
   getUserLoc() async {
     Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    var geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 10);
+    var geohash = Geohash.encode(location.latitude, location.longitude, codeLength: 5);
     return geohash;
   }
 
-  Future getList(var geohash) async{
+  Future getList() async{
     //cloudDbReference;
-
+    Position location = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    String geohash = await Geohash.encode(location.latitude, location.longitude, codeLength: 5);
 //    QuerySnapshot snap = await cloudDbReference.collection('dashboard').whereorderBy("posttime").getDocuments();
     QuerySnapshot snap = await Firestore.instance
         .collection('dashboard')
         .orderBy('posttime', descending: true)
-        .where('geohash', isEqualTo: "gcddjn18egys")
+        .where('geohash', isEqualTo: geohash)
         .getDocuments();
 
     return snap;
@@ -200,7 +187,7 @@ void initState()  {
     final f = new DateFormat('yyyy-MM-dd hh:mm');
     var geoHash = getUserLoc();
     return FutureBuilder(
-      future: getList(geoHash),
+      future: getList(),
         builder: (_, _snapshot) {
         if (!_snapshot.hasData) return const Text('Loading content...', textAlign: TextAlign.center,
            style: TextStyle(fontSize: 30.0));
@@ -215,16 +202,16 @@ void initState()  {
             final docID = _snapshot.data.documents[index];
             final dynamic content = document['content'];
             final dynamic posttime = document['posttime'];
+            final dynamic displayName = document['displayName'];
             if(document['photo'] == null){
               image = 'gs://treehouse-bdeca.appspot.com/uploads/Pure_White_181.jpg';
             } else {
               image = document['photo'];
             }
-//
             DateTime dateTime = posttime.toDate();
-            return Container(
+              return Container(
                 margin: EdgeInsets.all(8.0),
-               child: Card(
+                child: Card(
                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8.0))),
                    child: InkWell(
                      onTap:() => print("Test"),
@@ -251,6 +238,10 @@ void initState()  {
 //                        ),
                        ),
                          ListTile(
+                           leading: Text(
+                             '$displayName :',
+                             style: TextStyle(fontSize: 20.0),
+                           ),
                            title: Text(
                              '$content',
                              style: TextStyle(fontSize: 20.0),
@@ -270,128 +261,6 @@ void initState()  {
       }
       );
     }
-
-
-//    return StreamBuilder<QuerySnapshot>(
-//      stream:
-//      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-//        if (!snapshot.hasData) return const Text('Loading content...');
-//        final int messageCount = snapshot.data.documents.length;
-//        return ListView.separated(
-//          separatorBuilder: (context, index) => Divider(
-//            color: Colors.lightGreen,
-//          ),
-//          itemCount: messageCount,
-//          itemBuilder:(_, int index){
-//            final DocumentSnapshot document = snapshot.data.documents[index];
-//            final docID = snapshot.data.documents[index];
-//            final dynamic content = document['content'];
-//            final dynamic posttime = document['posttime'];
-//            if(document['photo'] == null){
-//              image = 'gs://treehouse-bdeca.appspot.com/uploads/Pure_White_181.jpg';
-//            } else {
-//              image = document['photo'];
-//            }
-//
-//            DateTime dateTime = posttime.toDate();
-//            return Container(
-//                margin: EdgeInsets.all(8.0),
-//               child: Card(
-//                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8.0))),
-//                   child: InkWell(
-//                     onTap:() => print("Test"),
-//                     child: Column(
-//                       children: <Widget>[
-//                       ClipRRect(
-//                         borderRadius: BorderRadius.only(
-//                           topLeft: Radius.circular(8.0),
-//                           topRight: Radius.circular(8.0),
-//                         ),
-//                         child: CachedNetworkImage(
-//                           imageUrl: image,
-////                           imageBuilder: (context, imageProvider) => Container(
-////                             decoration: BoxDecoration(
-////                               image: image
-////                             ),
-////                           ),
-//                           placeholder: (context, url) => CircularProgressIndicator(),
-//                           errorWidget: (context, url, error) => Icon(Icons.error),
-//                         ),
-////                         Image.network(
-////                          image,
-////                          height: 150,
-////                        ),
-//                       ),
-//                         ListTile(
-//                           title: Text(
-//                             '$content',
-//                             style: TextStyle(fontSize: 20.0),
-//                           ),
-//                           subtitle: Text(
-//                             dateTime.toString(),
-//                             style: TextStyle(fontSize: 10.0),
-//                           ),
-//                         )
-//                     ]
-//                   )
-//                 )
-//            ),
-//            );
-//          }
-//        );
-//      }
-//      );
-
-//          itemBuilder: (_, int index) {
-
-
-
-//              return Dismissible(
-//                key: ObjectKey(snapshot.data.documents.elementAt(index)),
-
-
-
-
-
-//            );
-
-//    return ListView.builder(
-//        shrinkWrap: true,
-//
-//        itemCount: _dashboardList.length,
-//        itemBuilder: (BuildContext context, int index) {
-//          String dashboardID = _dashboardList[index].key;
-//          String content = _dashboardList[index].content;
-//          String postTime = _dashboardList[index].posttime;
-//          String location = _dashboardList[index].lat;
-//
-////            String userId = _dashboardList[index].userId;
-//          return Dismissible(
-//              key: Key(dashboardID),
-//              background: Container(color: Colors.green),
-////                onDismissed: (direction) async {
-////                  _deleteDashboard(dashboardID, index);
-////                },
-//              child: ListTile(
-//                title: Text(
-//                  '$content',
-//                  style: TextStyle(fontSize: 20.0),
-//                ),
-//                subtitle: Text(
-//                  ' $postTime',
-//                  style: TextStyle(fontSize: 10.0),
-//                ),
-//              )
-//          );
-//        });
-//
-//  }  } else {
-//  return Center(
-//  child: Text(
-//  "There is no content in this area. ",
-
-//  ));
-
 
   @override
   Widget build(BuildContext context){

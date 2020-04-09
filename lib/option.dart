@@ -1,19 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'main.dart';
 import 'package:flutter/material.dart';
 import './services/authentication.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
+import './services/Provider.dart';
 
 class Option extends StatefulWidget {
-  Option({Key key, this.auth, this.userId, this.onSignedOut}) : super(key: key);
-
-  final BaseAuth auth;
-  final VoidCallback onSignedOut;
-  final String userId;
 
   @override
-  State<StatefulWidget> createState() => _OptionState();
+  _OptionState createState() => _OptionState();
 }
 
 class _OptionState extends State<Option> {
@@ -22,8 +18,7 @@ class _OptionState extends State<Option> {
 
   final TextEditingController _emailFilter = new TextEditingController();
   final TextEditingController _passwordFilter = new TextEditingController();
-  final TextEditingController _resetPasswordEmailFilter =
-      new TextEditingController();
+  final TextEditingController _resetPasswordEmailFilter = new TextEditingController();
 
   String _email = "";
   String _password = "";
@@ -79,14 +74,14 @@ class _OptionState extends State<Option> {
   }
 
   void _checkEmailVerification() async {
-    _isEmailVerified = await widget.auth.isEmailVerified();
+    _isEmailVerified = await Provider.of(context).auth.isEmailVerified();
     if (!_isEmailVerified) {
       _showVerifyEmailDialog();
     }
   }
 
   void _resentVerifyEmail() {
-    widget.auth.sendEmailVerification();
+    Provider.of(context).auth.sendEmailVerification();
     _showVerifyEmailSentDialog();
   }
 
@@ -136,22 +131,6 @@ class _OptionState extends State<Option> {
         );
       },
     );
-  }
-
-  @override
-  void dispose() {
-    _onToDoAddedSubscription.cancel();
-    _onTodoChangedSubscription.cancel();
-    super.dispose();
-  }
-
-  _signOut() async {
-    try {
-      await widget.auth.signOut();
-      widget.onSignedOut();
-    } catch (e) {
-      print(e);
-    }
   }
 
   Widget _showButtonList() {
@@ -207,6 +186,7 @@ class _OptionState extends State<Option> {
             decoration: new InputDecoration(
               contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
               hintText: "Enter New Email",
+              hintStyle: TextStyle(fontSize: 20.0, color: Colors.black),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(22.0)),
             ),
@@ -235,7 +215,7 @@ class _OptionState extends State<Option> {
     if (_email != null && _email.isNotEmpty) {
       try {
         print("============>" + _email);
-        widget.auth.changeEmail(_email);
+        Provider.of(context).auth.changeEmail(_email);
       } catch (e) {
         print("============>" + e);
         setState(() {
@@ -251,20 +231,20 @@ class _OptionState extends State<Option> {
   void _changePassword() {
     if (_password != null && _password.isNotEmpty) {
       print("============>" + _password);
-      widget.auth.changePassword(_password);
+      Provider.of(context).auth.changePassword(_password);
     } else {
       print("Password field left empty");
     }
   }
 
   void _removeUser() {
-    widget.auth.deleteUser();
+    Provider.of(context).auth.deleteUser();
   }
 
   void _sendResetPasswordMail() {
     if (_resetPasswordEmail != null && _resetPasswordEmail.isNotEmpty) {
       print("============>" + _resetPasswordEmail);
-      widget.auth.sendPasswordResetMail(_resetPasswordEmail);
+      Provider.of(context).auth.sendPasswordResetMail(_resetPasswordEmail);
     } else {
       print("Password field is empty");
     }
@@ -273,7 +253,8 @@ class _OptionState extends State<Option> {
   _showChangePasswordContainer() {
     return Container(
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30.0), color: Colors.brown),
+          borderRadius: BorderRadius.circular(30.0),
+          color: Colors.amberAccent),
       padding: EdgeInsets.fromLTRB(10, 20, 10, 20),
       child: Column(
         children: <Widget>[
@@ -282,6 +263,7 @@ class _OptionState extends State<Option> {
             decoration: new InputDecoration(
               contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
               hintText: "Enter new password",
+              hintStyle: TextStyle(fontSize: 20.0, color: Colors.black),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(22.0)),
             ),
@@ -315,6 +297,7 @@ class _OptionState extends State<Option> {
             decoration: new InputDecoration(
               contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
               hintText: "Enter Email",
+              hintStyle: TextStyle(fontSize: 20.0, color: Colors.black),
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(22.0)),
             ),
@@ -339,20 +322,29 @@ class _OptionState extends State<Option> {
   }
 
   _removeUserContainer() {
-    return new MaterialButton(
-      shape:
+    return Column(
+      children: <Widget>[
+        new MaterialButton(
+          shape:
           RoundedRectangleBorder(borderRadius: new BorderRadius.circular(30.0)),
-      onPressed: () {
-        _removeUser();
-      },
-      minWidth: MediaQuery.of(context).size.width,
-      padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-      color: Colors.red,
-      textColor: Colors.white,
-      child: Text(
+          onPressed: () {
+            _removeUser();
+          },
+          minWidth: MediaQuery.of(context).size.width,
+          padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          color: Colors.red,
+          textColor: Colors.white,
+          child: Text(
         "Remove User",
         textAlign: TextAlign.center,
       ),
-    );
+    ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            "Warning: You will have to be recently logged in order to delete your account.",
+            style: TextStyle(fontSize: 20,),),
+        ),
+        ]);
   }
 }

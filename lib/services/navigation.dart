@@ -2,84 +2,61 @@ import 'package:flutter/material.dart';
 import 'package:treehouse/option.dart';
 import 'package:treehouse/home.dart';
 import 'package:treehouse/profile.dart';
-import 'package:treehouse/services/authentication.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'dart:async';
-import 'package:intl/intl.dart';
-import 'package:treehouse/models/user.dart';
+import '../services/Provider.dart';
 
-class BottomNavigationBarController extends StatefulWidget{
-  BottomNavigationBarController({Key key, this.auth, this.userId, this.logoutCallback}) : super(key: key);
-
-  final BaseAuth auth;
-  final String userId;
-  final VoidCallback logoutCallback;
+class BottomNavigationBarController extends StatefulWidget {
   @override
-  _BottomNavigationBarControllerState createState() =>
-      _BottomNavigationBarControllerState();
+  State<StatefulWidget> createState() {
+    return _BottomNavigationBarControllerState();
+  }
 }
 
-class _BottomNavigationBarControllerState extends State<BottomNavigationBarController>{
+class _BottomNavigationBarControllerState
+    extends State<BottomNavigationBarController> {
+  int _index = 0;
 
-
-
-
-  signOut() async {
-    try {
-      await widget.auth.signOut();
-      widget.logoutCallback();
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  final List<Widget> pages = [
-    Home(
-      key: PageStorageKey('Page1'),
-    ),
-    Profile(
-      key: PageStorageKey('Page2'),
-    ),
-    Option(
-      key: PageStorageKey('Page2')
-    ),
+  final List<Widget> _pages = [
+    Home(),
+    Profile(),
+    Option(),
   ];
 
-  final PageStorageBucket bucket = PageStorageBucket();
-
-  int _selectedIndex = 0;
-
-  Widget _bottomNavigationBar(int selectedIndex) => BottomNavigationBar(
-    onTap: (int index) => setState(() => _selectedIndex = index),
-    currentIndex: selectedIndex,
-    items: const <BottomNavigationBarItem>[
-      BottomNavigationBarItem(
-        icon: Icon(Icons.dashboard), title: Text('Home')),
-      BottomNavigationBarItem(
-          icon: Icon(Icons.account_box), title: Text('Profile')),
-      BottomNavigationBarItem(
-        icon: Icon(Icons.build), title: Text('Options')),
-    ],
-  );
+  void onTabTapped(int index) {
+    setState(() {
+      _index = index;
+    });
+  }
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-        title: Text("Treehouse"),
-        actions: <Widget>[
-          new FlatButton(
-            onPressed: signOut,
-
-            child: new Text('Logout',
-                style: new TextStyle(fontSize:  20.0, color: Colors.white)),
-          )
+      appBar: AppBar(title: Text("Treehouse"), actions: <Widget>[
+        new FlatButton(
+          onPressed: () async {
+            try {
+              await Provider.of(context).auth.signOut();
+            } catch (e) {
+              print(e);
+            }
+          },
+          child: new Text(
+            'Logout',
+            style: new TextStyle(fontSize: 20.0, color: Colors.white),
+          ),
+        )
+      ]),
+      body: _pages[_index],
+      bottomNavigationBar: BottomNavigationBar(
+        onTap: onTabTapped,
+        currentIndex: _index,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard), title: Text('Home')),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.account_box), title: Text('Profile')),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.build), title: Text('Options')),
         ],
-      ),
-      bottomNavigationBar: _bottomNavigationBar(_selectedIndex),
-      body: PageStorage(
-        child: pages[_selectedIndex],
-        bucket: bucket,
       ),
     );
   }
