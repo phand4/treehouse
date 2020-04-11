@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/authentication.dart';
 import '../services/Provider.dart';
 
-import 'package:treehouse/customTextField.dart';
-import 'package:treehouse/option.dart';
+
+import 'package:treehouse/pages/option.dart';
 
 enum AuthFormType { signIn, signUp, reset}
 //Login + Registration page for the application

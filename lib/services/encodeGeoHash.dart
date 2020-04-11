@@ -11,8 +11,8 @@
 //
 //class EncodeGeoHash implements BaseEncodeGeoHash{
 //
-//  Future<String> encode(Position location) async{
-//    var precision = 10;
+//  Future<String> encode(Position location, precision) async{
+//    var precision;
 //    var g_BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
 //
 //    //0 is minimum | 1 is maximum

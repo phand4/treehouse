@@ -1,15 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import './services/authentication.dart';
+import '../services/authentication.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
-import './services/navigation.dart';
+import '../services/navigation.dart';
 import 'package:treehouse/models/user.dart';
 import 'package:geolocator/geolocator.dart';
-import './services/encodeGeoHash.dart';
+import '../services/encodeGeoHash.dart';
 import 'package:geohash/geohash.dart';
-import 'main.dart';
+import '../main.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as Path;
@@ -17,13 +17,12 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:treehouse/services/authentication.dart';
 import 'package:treehouse/services/Provider.dart';
-
+import 'package:flutter/semantics.dart';
 
 enum DistFormType { near, far, wyr}
 
 class Home extends StatefulWidget{
   final DistFormType distFormType;
-
   Home({Key key, @required this.distFormType}) : super(key: key);
   @override
   _HomeState createState() => _HomeState(distFormType: this.distFormType);
@@ -35,12 +34,13 @@ class _HomeState extends State<Home>{
   List<User> _UserList = [];
   File _image;
   var image;
-  String _userId;
+  String _altText;
 
   final cloudDbReference = Firestore.instance;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   final _textEditingController = TextEditingController();
+  final _altTextEditingController = TextEditingController();
 
   void _switchForm(String state) {
     if(state == "near"){
@@ -57,6 +57,7 @@ class _HomeState extends State<Home>{
       });
     }
   }
+
   //bounding box to calculate area around user
 //  Rectangle<T> boundingBox(Rectangle<T> other) {
 //    var latmax = max(this.left  this.width, other.left + other.width);
@@ -97,27 +98,27 @@ void initState()  {
 
   showAddDashboardDialog(BuildContext context) async {
     _textEditingController.clear();
+    String altText;
     await showDialog<String>(
         context: context,
     builder: (BuildContext context){
-
           return AlertDialog(
-            content: new Row(
-              children: <Widget>[
-                new Expanded(
-                  child: new TextField(
-                    controller: _textEditingController,
-                    autofocus: true,
-                    decoration: new InputDecoration(
-                      labelText: 'Post new content',
+              content: new Row(
+                children: <Widget>[
+                  new Expanded(
+                    child: new TextField(
+                      controller: _textEditingController,
+                      autofocus: true,
+                      decoration: new InputDecoration(
+                        labelText: 'Post new content',
+                      ),
                     ),
-                  ),
-                )
-              ],
-            ),
+                  )
+                ],
+              ),
             actions: <Widget>[
               new FlatButton(
-                onPressed: (){
+                onPressed: () async {
                   getImage();
                 },
                 child: Icon(Icons.camera_alt),
@@ -140,13 +141,14 @@ void initState()  {
 
   addNewDashboard(String dashboardItem, File _image) async {
     //Get current user ID
-
+    String altText;
     String user = await Provider.of(context).auth.getCurrentUID();
     String displayName = await Provider.of(context).auth.getCurrentDisplayName();
     String _uploadedFileURL;
 
   if(_image == null){
     _uploadedFileURL = "gs://treehouse-bdeca.appspot.com/uploads/Pure_White_181.jpg";
+    altText = "no photo";
   }else {
     //Upload image retrieve url and assign url to firestore
     File image2 = _image;
@@ -185,6 +187,7 @@ void initState()  {
         'userId' : user,
         'displayName' : displayName,
         'photo' : _uploadedFileURL,
+        'photoAltText' : altText,
     });
   }
 
@@ -242,40 +245,40 @@ void initState()  {
             final dynamic content = document['content'];
             final dynamic posttime = document['posttime'];
             final dynamic displayName = document['displayName'];
+            String altText;
             if(document['photo'] == null){
               image = 'gs://treehouse-bdeca.appspot.com/uploads/Pure_White_181.jpg';
+              altText = "Blank space";
             } else {
               image = document['photo'];
+              altText = document['photoAltText'];
             }
             DateTime dateTime = posttime.toDate();
               return Container(
                 margin: EdgeInsets.all(8.0),
+
                 child: Card(
                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8.0))),
                    child: InkWell(
                      onTap:() => print("Test"),
                      child: Column(
                        children: <Widget>[
-                       ClipRRect(
-                         borderRadius: BorderRadius.only(
-                           topLeft: Radius.circular(8.0),
-                           topRight: Radius.circular(8.0),
-                         ),
-                         child: CachedNetworkImage(
-                           imageUrl: image,
-//                           imageBuilder: (context, imageProvider) => Container(
-//                             decoration: BoxDecoration(
-//                               image: image
-//                             ),
-//                           ),
-                           //placeholder: (context, url) => CircularProgressIndicator(),
-                           //errorWidget: (context, url, error) => Icon(Icons.error),
-                         ),
-//                         Image.network(
-//                          image,
-//                          height: 150,
-//                        ),
-                       ),
+                           ClipRRect(
+                             borderRadius: BorderRadius.only(
+                               topLeft: Radius.circular(8.0),
+                               topRight: Radius.circular(8.0),
+                             ),
+                               child: Semantics(
+                                 child: CachedNetworkImage(
+                                   imageUrl: image,
+                                 ),
+                                 label: '$altText',
+                               ),
+    //                         Image.network(
+    //                          image,
+    //                          height: 150,
+    //                        ),
+                           ),
                          ListTile(
                            leading: Text(
                              '$displayName :',
@@ -309,7 +312,7 @@ void initState()  {
           onPressed: (){
             showAddDashboardDialog(context);
           },
-         tooltip: 'Increment',
+         tooltip: 'Post to Treehouse',
           child: Icon(Icons.message),
     ),
       drawer: Drawer(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:treehouse/option.dart';
-import 'package:treehouse/home.dart';
-import 'package:treehouse/profile.dart';
+import 'package:treehouse/pages/option.dart';
+import 'package:treehouse/pages/home.dart';
+import 'package:treehouse/pages/profile.dart';
 import '../services/Provider.dart';
 
 class BottomNavigationBarController extends StatefulWidget {

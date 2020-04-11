@@ -2,12 +2,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:treehouse/LoginPage.dart';
+import 'package:treehouse/pages/LoginPage.dart';
 import './pages/root_page.dart';
 import './services/authentication.dart';
 import './services/navigation.dart';
 import './services/Provider.dart';
-import 'package:treehouse/home.dart';
+import 'package:treehouse/pages/home.dart';
 import './pages/signIn.dart';
 
 void main() {

@@ -1,10 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'main.dart';
+import '../main.dart';
 import 'package:flutter/material.dart';
-import './services/authentication.dart';
+import '../services/authentication.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
-import './services/Provider.dart';
+import '../services/Provider.dart';
 
 class Option extends StatefulWidget {
 

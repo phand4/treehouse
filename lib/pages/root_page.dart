@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'signIn.dart';
 import '../services/authentication.dart';
-import '../option.dart';
-import '../home.dart';
+import 'option.dart';
+import 'home.dart';
 import '../services/navigation.dart';
 
 class RootPage extends StatefulWidget {
